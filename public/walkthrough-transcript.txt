@@ -1,0 +1,23 @@
+One place for every request
+Kevin runs a mobile dog grooming business. His clients currently text to book, and requests get lost. This working MVP replaces that scattered process with a clear appointment request form and a persistent workspace for Kevin.
+
+A simple client request
+A client starts here. They enter their dog’s name, breed and size, choose a service, and suggest a date and time window. The page works on a phone, so clients can request a visit wherever they are.
+
+The details Kevin needs
+The form also collects a contact number, the service address, and optional care notes. In this example, Taylor is requesting a full groom for Teddy. Required fields and dates are checked before anything is saved.
+
+A clear receipt
+After submission, the client receives a reference and a clear next step. This is a request, not an automatic booking. Kevin will contact the client to agree on availability, the price, and the exact time.
+
+New requests are visible
+Back in Kevin’s workspace, Teddy’s request appears automatically. The waiting count and unread badge update. The open workspace checks for new requests every eight seconds and shows an in-page alert. Browser alerts are optional when permission is granted.
+
+Review before confirming
+Opening the request shows the dog, service, preferred visit, address, contact links, and care notes in one place. Kevin can search and filter the inbox instead of searching through separate text conversations.
+
+Confirm then complete
+After agreeing the visit with the client, Kevin records the confirmed time. The request moves out of the waiting list. When the grooming is finished, he marks the visit completed, keeping a useful history of the work.
+
+Ready for a mobile business
+Bookings are stored in a database and survive reloads. Real client details are protected behind owner access. Reviewers can use a separate practice workspace with fictional data. This MVP keeps Kevin in control: no automatic payments or messages, and notifications require an open workspace.

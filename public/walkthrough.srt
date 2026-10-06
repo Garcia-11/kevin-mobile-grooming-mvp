@@ -1,0 +1,112 @@
+1
+00:00:00,000 --> 00:00:04,801
+Kevin runs a mobile dog grooming business. His clients currently
+text to book, and requests
+
+2
+00:00:04,801 --> 00:00:09,602
+get lost. This working MVP replaces that scattered process with a
+clear appointment request form
+
+3
+00:00:09,602 --> 00:00:14,403
+and a persistent workspace for Kevin.
+
+4
+00:00:15,503 --> 00:00:19,809
+A client starts here. They enter their dog’s name, breed and size,
+choose a service,
+
+5
+00:00:19,809 --> 00:00:24,114
+and suggest a date and time window. The page works on a phone, so
+clients
+
+6
+00:00:24,114 --> 00:00:28,420
+can request a visit wherever they are.
+
+7
+00:00:29,520 --> 00:00:34,062
+The form also collects a contact number, the service address, and
+optional care notes. In
+
+8
+00:00:34,062 --> 00:00:38,605
+this example, Taylor is requesting a full groom for Teddy. Required
+fields and dates are
+
+9
+00:00:38,605 --> 00:00:43,147
+checked before anything is saved.
+
+10
+00:00:44,247 --> 00:00:48,765
+After submission, the client receives a reference and a clear next
+step. This is a
+
+11
+00:00:48,765 --> 00:00:53,284
+request, not an automatic booking. Kevin will contact the client to
+agree on availability, the
+
+12
+00:00:53,284 --> 00:00:57,802
+price, and the exact time.
+
+13
+00:00:58,902 --> 00:01:04,015
+Back in Kevin’s workspace, Teddy’s request appears automatically.
+The waiting count and unread badge update.
+
+14
+00:01:04,015 --> 00:01:09,127
+The open workspace checks for new requests every eight seconds and
+shows an in-page alert.
+
+15
+00:01:09,127 --> 00:01:14,240
+Browser alerts are optional when permission is granted.
+
+16
+00:01:15,340 --> 00:01:20,016
+Opening the request shows the dog, service, preferred visit,
+address, contact links, and care notes
+
+17
+00:01:20,016 --> 00:01:24,692
+in one place. Kevin can search and filter the inbox instead of
+searching through separate
+
+18
+00:01:24,692 --> 00:01:29,368
+text conversations.
+
+19
+00:01:30,468 --> 00:01:34,851
+After agreeing the visit with the client, Kevin records the
+confirmed time. The request moves
+
+20
+00:01:34,851 --> 00:01:39,234
+out of the waiting list. When the grooming is finished, he marks the
+visit completed,
+
+21
+00:01:39,234 --> 00:01:43,617
+keeping a useful history of the work.
+
+22
+00:01:44,717 --> 00:01:51,161
+Bookings are stored in a database and survive reloads. Real client
+details are protected behind
+
+23
+00:01:51,161 --> 00:01:57,604
+owner access. Reviewers can use a separate practice workspace with
+fictional data. This MVP keeps
+
+24
+00:01:57,604 --> 00:02:04,048
+Kevin in control: no automatic payments or messages, and
+notifications require an open workspace.
