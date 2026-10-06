@@ -5,7 +5,7 @@ A working appointment-request MVP for Kevin, a mobile dog groomer who currently 
 ## Product
 
 - `/`: responsive client request form with dog, service, preferred date, time window, contact information, address, and care notes.
-- `/dashboard`: owner-only workspace with request search, status filters, unread counts, client contact links, agreed appointment times, and a new → confirmed → completed workflow. Requests can be declined and reopened.
+- `/dashboard`: owner-only workspace with request search, status filters, unread counts, client contact links, agreed appointment times, and a new → confirmed → completed workflow. Requests can be declined and reopened. A request and its saved client details can be permanently deleted from the detail panel after explicit confirmation.
 - `/demo`: isolated practice workspace seeded with fictional appointments. Anyone who can visit the site can try both sides without seeing real customers. Practice data expires operationally through cleanup on later demo creation, after seven days; browser sessions last 24 hours.
 - In-page new-request notification, unread badge, and optional browser alerts. The inbox checks for updates every eight seconds. The tab must remain open; background browser throttling may delay alerts. SMS, email delivery, and closed-browser push are outside this MVP.
 - Persistent Cloudflare D1 storage; no browser-only booking database. HTTP retries use a request key to prevent duplicate submissions.
@@ -77,7 +77,7 @@ python3 tests/api_smoke.py
 npm run build
 ```
 
-The API smoke script targets a running local preview at `http://127.0.0.1:5173`; override it with `TEST_BASE_URL`. It creates only fictional practice sessions. It covers persistence, duplicate prevention, isolation between sessions, unauthorized access, invalid transitions, required confirmation time, completion, past dates, cross-origin writes, and tampered cookies.
+The API smoke script targets a running local preview at `http://127.0.0.1:5173`; override it with `TEST_BASE_URL`. It creates only fictional practice sessions. It covers persistence, duplicate prevention, isolation between sessions, unauthorized access, invalid transitions, required confirmation time, completion, past dates, cross-origin writes, tampered cookies, and confirmed deletion with session isolation.
 
 The browser walkthrough also verifies form submission, the automatic inbox update, exact time persistence, confirmation, completion, search, responsive layouts, and the read-only WebMCP inbox tool. Desktop notification delivery depends on browser support and permission and was not enabled during automated review.
 
