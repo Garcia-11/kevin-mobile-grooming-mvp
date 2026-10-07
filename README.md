@@ -1,90 +1,78 @@
 # Kevin's Mobile Grooming
 
-A working appointment-request MVP for Kevin, a mobile dog groomer who currently loses bookings in text conversations. Clients submit one structured request; Kevin gets a persistent inbox, an unread badge, and alerts for incoming requests while the workspace is open.
+An appointment-request MVP for a mobile dog groomer who loses bookings in text conversations. Customers request a visit and follow its status; Kevin reviews a persistent inbox, agrees on a time, and completes the appointment.
 
 ## Product
 
-- `/`: responsive client request form with dog, service, preferred date, time window, contact information, address, and care notes.
-- `/dashboard`: owner-only workspace with request search, status filters, unread counts, client contact links, agreed appointment times, and a new → confirmed → completed workflow. Requests can be declined and reopened. A request and its saved client details can be permanently deleted from the detail panel after explicit confirmation.
-- `/demo`: isolated practice workspace seeded with fictional appointments. Anyone who can visit the site can try both sides without seeing real customers. Practice data expires operationally through cleanup on later demo creation, after seven days; browser sessions last 24 hours.
-- In-page new-request notification, unread badge, and optional browser alerts. The inbox checks for updates every eight seconds. The tab must remain open; background browser throttling may delay alerts. SMS, email delivery, and closed-browser push are outside this MVP.
-- Persistent Cloudflare D1 storage; no browser-only booking database. HTTP retries use a request key to prevent duplicate submissions.
+- `/`: responsive booking form with dog, service, preferred date/time window, contact details, address and care notes. With the Supabase backend, real submissions require a customer account.
+- `/login` and `/login?mode=signup`: customer sign-in and signup. Supabase manages passwords, email confirmation and recovery. `/account` shows only the signed-in customer's own requests, confirmed visits and history.
+- `/admin/login`: a separate business-owner entry. `/dashboard` provides search, status filters, unread counts, contact links, confirmation, completion, decline/reopen and permanent deletion after an explicit warning. A normal customer account cannot gain admin access by choosing this entry or editing its metadata.
+- `/demo`: a separate practice workspace with fictional data, seeded per anonymous Supabase user. Real and practice sessions use different cookies and namespaces. Practice sessions expire after 24 hours. Evaluators receive this URL separately; it is not advertised in the customer footer.
+- New-request badges, in-page toasts and optional browser notifications while the workspace is open. The inbox checks every eight seconds. Closed-browser push, SMS, email appointment notices, payments and automatic routing are outside this MVP.
 
-A request is **not a confirmed booking**. Kevin first agrees availability, price, and time with the client by phone, text, or email. Confirming in the app records that agreement; it does not send a message to the client. Route planning, visit duration, payments, and automatic reminders are intentionally outside scope.
+A request is **not a confirmed booking**. Kevin contacts the customer to agree availability, price and time. During confirmation he enters the visit duration and travel time after it. PostgreSQL reserves the entire interval and blocks overlapping confirmed visits, including simultaneous confirmation attempts. Another visit may begin exactly when the previous travel time ends. Cancel/decline releases the reserved interval; it does not delete the request. Permanent deletion removes the request and its saved contact details from the active database.
 
-## Published deliverables
+## Deliverables
 
 - [Live MVP](https://kevins-grooming-bookings-joao.garcia-26.chatgpt.site)
 - [Practice workspace](https://kevins-grooming-bookings-joao.garcia-26.chatgpt.site/demo)
-- [One-page PDF overview](https://kevins-grooming-bookings-joao.garcia-26.chatgpt.site/mvp-overview.pdf)
-- [Narrated product walkthrough](https://kevins-grooming-bookings-joao.garcia-26.chatgpt.site/walkthrough.mp4)
+- [One-page PDF](https://kevins-grooming-bookings-joao.garcia-26.chatgpt.site/mvp-overview.pdf)
+- [Original product walkthrough](https://kevins-grooming-bookings-joao.garcia-26.chatgpt.site/walkthrough.mp4)
 
-The walkthrough is approximately two minutes, using captured screens of the working product and fictional data. English subtitles and a transcript are in `public/`.
+The original approximately two-minute walkthrough uses captured screens and fictional data. It predates customer accounts and duration/travel reservations. Re-record the final walkthrough with the updated product before final submission; the assessment asks for a product walkthrough and does not require an on-camera presenter. No submission email is sent by the application.
 
-## Try it
+## Architecture
 
-1. Open the published site and choose **Explore the practice workspace**.
-2. Choose **New request**. The booking form opens in another tab in the same practice session.
-3. Enter fictional client details and a future preferred date; submit once.
-4. Return to the workspace. The request appears automatically with an unread badge and an in-page alert.
-5. Open it, choose an agreed time, check the agreement box, and confirm the visit. Mark it completed to finish the flow.
+React/TypeScript on Vinext, hosted as a Sites/Cloudflare Worker. Supabase provides PostgreSQL and Auth, accessed over HTTPS. The app uses a publishable key and each verified user's token; no service-role key is included. HttpOnly cookies hold sessions, server routes verify identity with Supabase, and database RLS independently protects each customer's records. Narrow database functions authorize mutations and a PostgreSQL exclusion constraint protects the schedule.
 
-The real client inbox starts empty. Demo fixtures never enter that inbox.
+The original Cloudflare D1 implementation remains in `lib/legacy` as a controlled rollback path. `BOOKING_BACKEND` selects the store; it does not combine data from the two stores. Never switch back after live Supabase writes without first reconciling those requests. The original schema migrations remain intact. Original guest requests, if imported, stay admin-only until explicitly linked to a verified customer id; matching a typed contact email never grants ownership.
 
-## Implementation
+See [Supabase setup, owner role and migration](supabase/README.md) for the applied schema, mail configuration, permissions and cutover checklist. Production activation requires a working custom SMTP sender, a verified business-owner account and Sites runtime configuration. Local integration checks do not prove email delivery.
 
-React and TypeScript on the Vinext starter, packaged as a Cloudflare Worker. Drizzle defines the D1 schema and produces versioned migrations; prepared D1 statements perform queries. Owner access uses Sites' server-verified ChatGPT identity and a server-side owner email allowlist. Demo sessions use signed, HttpOnly, SameSite cookies and server-side tenant scoping.
+## Local development
 
-Every inbox read and update verifies owner identity or a valid demo session. Public request submission validates all fields server-side, rejects cross-origin writes and past dates, limits repeated submissions, and uses an invisible spam trap. Customer details are never embedded into client bundles. Exact same-start conflicts are checked during confirmation, but Kevin must still account for service duration and travel time manually.
-
-## Run locally
-
-Prerequisites: Node.js 22.13 or newer and npm.
+Node.js 22.13+ and npm:
 
 ```sh
 npm ci
 ```
 
-Create a local `.dev.vars` file (ignored by Git):
+Copy `.env.example` into an ignored `.dev.vars`, then set:
 
 ```dotenv
-OWNER_EMAIL=seedy@sites.test
-DEMO_SECRET=replace-with-a-random-secret-at-least-32-characters-long
+BOOKING_BACKEND=supabase
+SUPABASE_URL=your-project-url
+SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```
 
-The portable Sites development profile supplies the test identity `seedy@sites.test`. This is a local preview identity only. Production uses the configured business owner's actual sign-in email.
+Use a separate Supabase development project for ongoing development. Apply the SQL migrations in order and configure Auth as described in `supabase/README.md`. The assessment project already has those migrations; do not apply them twice.
 
 ```sh
-npm run db:generate  # only after changing db/schema.ts
-npm run build
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_mixed_prowler.sql
 npm run dev
 ```
 
-Apply each pending migration once, in order. Keep `.dev.vars`, local database files, and runtime state out of Git. `npm run build` produces `dist/server/index.js` and static client assets. Sites handles the production D1 binding and migrations.
-
-## Production configuration
-
-Set `OWNER_EMAIL` and a strong `DEMO_SECRET` as runtime secrets. The project manifest declares only the logical D1 binding `DB`; it contains no credentials. Change `OWNER_EMAIL` to Kevin's verified sign-in email during a real business handoff. The assessment deployment initially authorizes the project owner.
-
-Sites access is independent of the owner inbox: making the booking page publicly reachable does not grant access to `/dashboard`. Public sharing is controlled by the site owner. The demo remains a separate data namespace.
+The legacy D1 preview needs its versioned Drizzle migrations applied locally and the original owner/demo settings. Production runtime values belong in Sites, never the manifest, source or GitHub. Keep `.dev.vars`, credentials and runtime state out of Git.
 
 ## Validation
 
 ```sh
+node --test tests/scheduling.test.mjs tests/supabase-db.test.mjs
 npx tsc --noEmit
 python3 tests/api_smoke.py
 npm run build
 ```
 
-The API smoke script targets a running local preview at `http://127.0.0.1:5173`; override it with `TEST_BASE_URL`. It creates only fictional practice sessions. It covers persistence, duplicate prevention, isolation between sessions, unauthorized access, invalid transitions, required confirmation time, completion, past dates, cross-origin writes, tampered cookies, and confirmed deletion with session isolation.
+The database test runs the real migration SQL on embedded PostgreSQL, covering RLS isolation, unauthorized writes, role escalation, demo scoping, status rules, service and travel overlaps, boundaries and deletion. The API smoke test runs only fictional practice sessions against the configured local preview.
 
-The browser walkthrough also verifies form submission, the automatic inbox update, exact time persistence, confirmation, completion, search, responsive layouts, and the read-only WebMCP inbox tool. Desktop notification delivery depends on browser support and permission and was not enabled during automated review.
+`tests/accounts_smoke.py` accepts operator-created, disposable fictional customer/admin credentials through hidden JSON stdin. It checks real Supabase sign-in, client/admin API boundaries, separate histories, concurrent confirmations, token refresh, tampered cookies, deletion and logout. It is not a public fixture seeder; never run it with real customer accounts. Email signup/confirmation and recovery must additionally be tested with the configured mail sender.
 
-## Assessment scope and assumptions
+`tests/email_verification_smoke.py` accepts an operator-created disposable token fixture through hidden stdin. Integration checks cover a clean landing URL, HttpOnly pending cookies, explicit same-origin confirmation, repeated GET previews, one-time token reuse rejection, real Auth sessions and logout. Test signup and recovery separately; a PKCE-prefixed recovery token is supported without requiring the original browser's verifier cookie. The project's current Auth schema requires a matching `auth.one_time_tokens` fixture with an expiry as well as the corresponding user token field. Revoke fixture sessions and delete the fictional user afterward. Never use real email links in automated fixture tests.
 
-- One groomer, one business, no automatic availability promise.
-- Dates are preferences; confirmed times are local to the service address. The MVP uses America/New_York for the server's current-day cutoff and must be changed if the business operates elsewhere.
-- Dashboard shows the most recent 500 requests. Pagination, data export, retention policy, and stronger public abuse protection should be added before larger-scale use.
-- No real customer information or secret is included in demo data or source code.
-- The dog illustration was generated with AI. The assessment permits AI assistance.
+## Assumptions and limits
+
+- One business and one groomer, Kevin. The brief does not specify multiple employees; adding staff requires a resource per employee in the reservation constraint.
+- Confirmed times are local calendar times. The current-day cutoff assumes America/New_York; change this when the actual service timezone is known.
+- Kevin estimates duration and travel. There is no automatic route or price calculation.
+- Lists show the latest 500 records. Add pagination and a business retention policy for larger-scale use.
+- Supabase's free plan has usage limits and can pause inactive projects. Free setup does not guarantee free commercial hosting indefinitely; evaluate the real business's usage and ownership at handoff.
+- Synthetic imagery and AI assistance were used; the assessment permits AI.

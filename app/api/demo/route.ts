@@ -1,4 +1,16 @@
-import { createDemoCookie,demoSession } from '@/lib/auth';
-import { db,json,sameOrigin,unavailable } from '@/lib/data';
-export async function POST(req:Request){try{if(!sameOrigin(req))return json({error:'Open the demo from this site.'},403);const existing=await demoSession();if(existing)return json({ok:true});const {tenant,cookie}=await createDemoCookie();const now=new Date().toISOString();const date=(days:number)=>new Date(Date.now()+days*86400000).toISOString().slice(0,10);const fixtures=[['Maya Wilson','Charlie','Goldendoodle','Medium','Full groom','new',date(2),'Morning','24 Oak Street, Demo City','Charlie can be nervous around dryers. Please take it slowly.'],['Alex Morgan','Luna','Cocker Spaniel','Medium','Bath & brush','confirmed',date(1),'Afternoon','18 Cedar Lane, Demo City','Please ring the side doorbell.'],['Jamie Lee','Milo','Corgi','Small','Nail trim','new',date(3),'Flexible','7 Park Avenue, Demo City','First visit!'],['Sam Rivera','Daisy','Labrador','Large','Bath & brush','completed',date(-1),'Morning','36 Maple Road, Demo City','']];
-const stmts=fixtures.map((f,i)=>db().prepare('INSERT INTO requests (id,tenant,request_key,owner_name,phone,email,dog_name,breed,size,service,address,preferred_date,time_window,notes,status,scheduled_at,seen,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(),tenant,crypto.randomUUID(),f[0],'+1 202 555 01'+String(10+i),'demo@example.com',f[1],f[2],f[3],f[4],f[8],f[6],f[7],f[9],f[5],f[5]==='confirmed'?f[6]+'T14:00':null,f[5]==='new'?0:1,new Date(Date.now()-i*1800000).toISOString(),now));await db().batch(stmts);await db().batch([db().prepare("DELETE FROM requests WHERE tenant LIKE 'demo:%' AND created_at < ?").bind(new Date(Date.now()-7*86400000).toISOString()),db().prepare('DELETE FROM rate_limits WHERE expires_at < ?').bind(Date.now())]);return new Response(JSON.stringify({ok:true}),{headers:{'Set-Cookie':cookie,'Content-Type':'application/json','Cache-Control':'no-store'}});}catch(e){return unavailable(e)}}
+import * as legacy from '@/lib/legacy/demo';
+import { usesSupabase,session,sb,reply,sbFailure,sessionCookies,type AuthTokens,type Session } from '@/lib/supabase';
+import { json,sameOrigin } from '@/lib/data';
+export async function POST(req:Request){
+ if(!usesSupabase())return legacy.POST(req);
+ let auth:Session|null=null;
+ try{
+  if(!sameOrigin(req))return json({error:'Open the demo from this site.'},403);
+  auth=await session(req,true);
+  if(auth){await sb('/rest/v1/rpc/grooming_seed_demo',auth.token,{method:'POST',body:'{}'});return reply({ok:true},200,auth);}
+  const tokens=await sb<AuthTokens>('/auth/v1/signup',undefined,{method:'POST',body:'{}'});
+  if(!tokens.access_token||!tokens.user.is_anonymous)return reply({error:'Practice access is unavailable right now.'},503);
+  await sb('/rest/v1/rpc/grooming_seed_demo',tokens.access_token,{method:'POST',body:'{}'});
+  return reply({ok:true},200,null,sessionCookies(tokens,true));
+ }catch(e){return sbFailure(e,auth)}
+}
