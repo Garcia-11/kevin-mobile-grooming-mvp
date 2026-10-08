@@ -8,7 +8,7 @@ An appointment-request MVP for a mobile dog groomer who loses bookings in text c
 - `/login` and `/login?mode=signup`: customer sign-in and signup. Supabase manages passwords, email confirmation and recovery. `/account` shows only the signed-in customer's own requests, confirmed visits and history.
 - `/admin/login`: a separate business-owner entry. `/dashboard` provides search, status filters, unread counts, contact links, confirmation, completion, decline/reopen and permanent deletion after an explicit warning. A normal customer account cannot gain admin access by choosing this entry or editing its metadata.
 - `/demo`: a separate practice workspace with fictional data, seeded per anonymous Supabase user. Real and practice sessions use different cookies and namespaces. Practice sessions expire after 24 hours. Evaluators receive this URL separately; it is not advertised in the customer footer.
-- New-request badges, in-page toasts and optional browser notifications while the workspace is open. The inbox checks every eight seconds. Closed-browser push, SMS, email appointment notices, payments and automatic routing are outside this MVP.
+- New-request badges, in-page toasts and optional browser notifications while the workspace is open. The inbox checks every eight seconds. Confirmation and cancellation emails are submitted through Brevo when Kevin confirms a real visit or cancels a confirmed one. The recipient is the verified account email, not an arbitrary contact address. The demo never sends email. Closed-browser push, SMS, payments and automatic routing are outside this MVP.
 
 A request is **not a confirmed booking**. Kevin contacts the customer to agree availability, price and time. During confirmation he enters the visit duration and travel time after it. PostgreSQL reserves the entire interval and blocks overlapping confirmed visits, including simultaneous confirmation attempts. Another visit may begin exactly when the previous travel time ends. Cancel/decline releases the reserved interval; it does not delete the request. Permanent deletion removes the request and its saved contact details from the active database.
 
@@ -28,6 +28,12 @@ React/TypeScript on Vinext, hosted as a Sites/Cloudflare Worker. Supabase provid
 The original Cloudflare D1 implementation remains in `lib/legacy` as a controlled rollback path. `BOOKING_BACKEND` selects the store; it does not combine data from the two stores. Never switch back after live Supabase writes without first reconciling those requests. The original schema migrations remain intact. Original guest requests, if imported, stay admin-only until explicitly linked to a verified customer id; matching a typed contact email never grants ownership.
 
 See [Supabase setup, owner role and migration](supabase/README.md) for the applied schema, mail configuration, permissions and cutover checklist. Production activation requires a working custom SMTP sender, a verified business-owner account and Sites runtime configuration. Local integration checks do not prove email delivery.
+
+## Booking emails
+
+Configure the server-only `BREVO_API_KEY` secret, a verified `BREVO_SENDER_EMAIL`, and the HTTPS `BOOKING_SITE_URL` in Sites, then deploy. The API key is separate from the SMTP key used by Supabase Auth. Appointment updates and their private email intents commit together in PostgreSQL. A bounded attempt follows the booking update; email failure does not undo a valid confirmation or cancellation. The admin sees the outcome and can retry safe failures without changing the booking. There is no background email retry worker in this MVP.
+
+Provider acceptance is recorded as sent; it is not a guarantee of inbox delivery. An ambiguous timeout or server error is marked unknown and must be checked in the provider logs before resending. Concurrent claims use database leases and stable provider idempotency keys. A later cancellation supersedes an unsent confirmation. A message already in flight cannot be recalled; the account history remains the current source of truth. Deleting a request also deletes its private outbox records, but does not erase mail already delivered or provider logs.
 
 ## Local development
 
@@ -56,7 +62,7 @@ The legacy D1 preview needs its versioned Drizzle migrations applied locally and
 ## Validation
 
 ```sh
-node --test tests/scheduling.test.mjs tests/supabase-db.test.mjs
+node --test tests/scheduling.test.mjs tests/supabase-db.test.mjs tests/booking-email.test.mjs tests/booking-email-db.test.mjs
 npx tsc --noEmit
 python3 tests/api_smoke.py
 npm run build

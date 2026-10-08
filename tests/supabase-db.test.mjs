@@ -8,15 +8,16 @@ test('PostgreSQL enforces account isolation, admin roles, demo scoping and full 
  const pg=new PGlite({extensions:{btree_gist}});
  try{
   await pg.exec(`create role anon; create role authenticated; create schema auth; create schema extensions;
-   create table auth.users(id uuid primary key);
+   create table auth.users(id uuid primary key,email text,email_confirmed_at timestamptz);
    create function auth.uid() returns uuid language sql stable as $$ select (nullif(current_setting('request.jwt.claims',true),'')::jsonb->>'sub')::uuid $$;
    create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb $$;
    grant usage on schema auth to authenticated;
    grant execute on function auth.uid(),auth.jwt() to authenticated;`);
-  await pg.exec(await readFile(new URL('../supabase/migrations/202610070001_grooming.sql',import.meta.url),'utf8'));
-  await pg.exec(await readFile(new URL('../supabase/migrations/202610070002_status_conflict.sql',import.meta.url),'utf8'));
+  await pg.exec(await readFile(new URL('../supabase/migrations/20261007192320_grooming_accounts_and_schedule.sql',import.meta.url),'utf8'));
+  await pg.exec(await readFile(new URL('../supabase/migrations/20261007193157_grooming_status_conflict_response.sql',import.meta.url),'utf8'));
+  await pg.exec(await readFile(new URL('../supabase/migrations/20261007205240_booking_emails.sql',import.meta.url),'utf8'));
   const admin=crypto.randomUUID(),a=crypto.randomUUID(),b=crypto.randomUUID(),demoA=crypto.randomUUID(),demoB=crypto.randomUUID();
-  for(const id of [admin,a,b,demoA,demoB])await pg.query('insert into auth.users values($1)',[id]);
+  for(const id of [admin,a,b,demoA,demoB])await pg.query('insert into auth.users(id) values($1)',[id]);
   await pg.query('insert into private.grooming_admins values($1)',[admin]);
   async function as(id,anonymous,fn){return pg.transaction(async tx=>{await tx.exec('set local role authenticated');await tx.query("select set_config('request.jwt.claims',$1,true)",[JSON.stringify({sub:id,is_anonymous:anonymous,user_metadata:{role:'admin'}})]);return fn(tx);});}
   const query=(id,sql,params=[],anonymous=false)=>as(id,anonymous,tx=>tx.query(sql,params));

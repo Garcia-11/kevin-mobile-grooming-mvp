@@ -4,6 +4,7 @@ import { json,sameOrigin } from '@/lib/data';
 import { updateSchema,today } from '@/lib/validation';
 import { visitInterval } from '@/lib/scheduling';
 import { z } from 'zod';
+import {notifyBooking} from '@/lib/booking-notifications';
 type Context={params:Promise<{id:string}>};
 export async function DELETE(req:Request,context:Context){
  if(!usesSupabase())return legacy.DELETE(req,context);
@@ -36,6 +37,8 @@ export async function PATCH(req:Request,context:Context){
    try{visitInterval(b.scheduledAt,b.durationMinutes,b.travelMinutes)}catch{return reply({error:'Choose a valid reserved time.'},400,auth)}
   }
   if(b.status!=='confirmed'&&(b.scheduledAt||b.durationMinutes!==undefined||b.travelMinutes!==undefined))return reply({error:'Set the reserved time when confirming the request.'},400,auth);
-  return reply(await sb('/rest/v1/rpc/grooming_manage_request',auth.token,{method:'POST',body:JSON.stringify({p_id:id,p_status:b.status??null,p_start:b.scheduledAt??null,p_duration:b.durationMinutes??null,p_travel:b.travelMinutes??null,p_seen:b.seen??false})}),200,auth);
+  const saved=await sb<{ok:boolean}>('/rest/v1/rpc/grooming_manage_request',auth.token,{method:'POST',body:JSON.stringify({p_id:id,p_status:b.status??null,p_start:b.scheduledAt??null,p_duration:b.durationMinutes??null,p_travel:b.travelMinutes??null,p_seen:b.seen??false})});
+  const notification=b.status==='confirmed'||b.status==='declined'?await notifyBooking(auth,id):undefined;
+  return reply({...saved,...(notification?{notification}:{})},200,auth);
  }catch(e){return sbFailure(e,auth)}
 }

@@ -3,7 +3,7 @@
 Current target: `Kevin Mobile Grooming` in `JG Consulting`, free plan, `us-east-1`.
 Project ref: `myfyvezvytoreptyjyku`. The migration is schema-only; no credentials or customer records are in source.
 
-Apply migrations in order: `202610070001_grooming.sql`, then `202610070002_status_conflict.sql`. Both are already applied to the assessment project; do not reapply them there. The second migration returns a business-conflict error without triggering database transaction retries. Local PostgreSQL tests run the identical SQL against a fresh PGlite database.
+Apply migrations in order: `20261007192320_grooming_accounts_and_schedule.sql`, `20261007193157_grooming_status_conflict_response.sql`, then `20261007205240_booking_emails.sql`. All are already applied to the assessment project; do not reapply them there. The second migration returns a business-conflict error without triggering database transaction retries. Local PostgreSQL tests run the identical SQL against a fresh PGlite database.
 
 ## Authentication
 
@@ -36,10 +36,18 @@ A PostgreSQL exclusion constraint rejects overlapping confirmed intervals for Ke
 
 Anonymous demos expire after 24 hours. A project operator can periodically remove only expired practice users/data and old rate-limit counters; this MVP does not automatically delete records for real clients. Plan a retention policy before commercial use.
 
+## Booking email outbox
+
+The third migration adds `private.grooming_email_events` and a booking-update trigger. A real confirmation, changed appointment time/duration, or cancellation of a confirmed visit records an email intent in the same transaction. Declining a new request creates no cancellation email. Demo namespaces never queue email. Recipient addresses come only from the customer’s verified Auth account. Outbox content is private and direct table access is denied.
+
+`grooming_claim_email` and `grooming_finish_email` are narrow, authenticated admin-only RPCs. They do not accept a recipient or arbitrary message. They fix their search path, check the real admin role, lock booking/outbox rows in the same order, and check a claim token and claimant before recording an outcome. Repeated booking writes create no duplicate intent; stale claims cannot overwrite a newer event. Leases block simultaneous sends. Unknown crashed attempts are only reclaimed inside a conservative 15-minute provider deduplication window; older ambiguity is retained for operator review. These intentionally privileged RPCs, like the existing booking RPCs, may be listed by the Supabase advisor. Their customer/demo/anonymous denial and state invariants are tested.
+
+Set the Brevo API key as a Sites secret, not in the database, SQL, browser, or source. Set the verified sender and public HTTPS origin as runtime values. Supabase’s SMTP configuration handles account emails; the application calls the Brevo HTTP API for appointment emails. See the main README for retry behavior and delivery limits.
+
 ## Checks
 
 ```sh
-node --test tests/scheduling.test.mjs tests/supabase-db.test.mjs
+node --test tests/scheduling.test.mjs tests/supabase-db.test.mjs tests/booking-email.test.mjs tests/booking-email-db.test.mjs
 npx tsc --noEmit
 python3 tests/api_smoke.py
 ```
