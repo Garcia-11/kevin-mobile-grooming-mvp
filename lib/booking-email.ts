@@ -28,7 +28,7 @@ export function bookingEmailContent(job:EmailJob,config:EmailConfig){
 export async function sendBookingEmail(job:EmailJob,config:EmailConfig,transport:typeof fetch=fetch):Promise<EmailOutcome>{
  const body=bookingEmailContent(job,config);
  try{
-  const response=await transport('https://api.brevo.com/v3/smtp/email',{method:'POST',headers:{'api-key':config.apiKey,'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(10000),redirect:'error'});
+  const response=await transport('https://api.brevo.com/v3/smtp/email',{method:'POST',headers:{'api-key':config.apiKey,'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(10000),redirect:'manual'});
   const data=await response.json().catch(()=>null) as {messageId?:string;code?:string;message?:string}|null;
   if(response.ok&&typeof data?.messageId==='string')return {status:'accepted',messageId:data.messageId.slice(0,200)};
   if(data?.code==='duplicate_parameter'&&/idempoten/i.test(data.message||''))return {status:'accepted'};
@@ -37,6 +37,7 @@ export async function sendBookingEmail(job:EmailJob,config:EmailConfig,transport
   if([400,404,405,422].includes(response.status))return {status:'failed',error:'provider_rejected'};
   // A timeout or 5xx may happen after the provider accepted the message.
   // Do not encourage a blind resend that could duplicate it.
+  console.error('Booking email response could not be confirmed',{status:response.status});
   return {status:'uncertain',error:'delivery_unknown'};
- }catch{return {status:'uncertain',error:'delivery_unknown'};}
+ }catch(e){console.error('Booking email transport failed',e instanceof Error?{name:e.name,reason:e.message.replace(config.apiKey,'[redacted]').slice(0,180)}:'unknown');return {status:'uncertain',error:'delivery_unknown'};}
 }

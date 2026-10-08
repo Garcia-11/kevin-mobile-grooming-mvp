@@ -4,7 +4,7 @@ An appointment-request MVP for a mobile dog groomer who loses bookings in text c
 
 ## Product
 
-- `/`: responsive booking form with dog, service, preferred date/time window, contact details, address and care notes. With the Supabase backend, real submissions require a customer account.
+- `/`: responsive booking form with dog details, an optional private dog photo, service, preferred date/time window, contact details, address and care notes. With the Supabase backend, real submissions require a customer account.
 - `/login` and `/login?mode=signup`: customer sign-in and signup. Supabase manages passwords, email confirmation and recovery. `/account` shows only the signed-in customer's own requests, confirmed visits and history.
 - `/admin/login`: a separate business-owner entry. `/dashboard` provides search, status filters, unread counts, contact links, confirmation, completion, decline/reopen and permanent deletion after an explicit warning. A normal customer account cannot gain admin access by choosing this entry or editing its metadata.
 - `/demo`: a separate practice workspace with fictional data, seeded per anonymous Supabase user. Real and practice sessions use different cookies and namespaces. Practice sessions expire after 24 hours. Evaluators receive this URL separately; it is not advertised in the customer footer.
@@ -35,6 +35,12 @@ Configure the server-only `BREVO_API_KEY` secret, a verified `BREVO_SENDER_EMAIL
 
 Provider acceptance is recorded as sent; it is not a guarantee of inbox delivery. An ambiguous timeout or server error is marked unknown and must be checked in the provider logs before resending. Concurrent claims use database leases and stable provider idempotency keys. A later cancellation supersedes an unsent confirmation. A message already in flight cannot be recalled; the account history remains the current source of truth. Deleting a request also deletes its private outbox records, but does not erase mail already delivered or provider logs.
 
+## Dog photos
+
+Customers can optionally choose one JPEG, PNG or WebP photo up to 5 MB when requesting a visit. The browser resizes and re-encodes it as a JPEG under 1 MB, removing source metadata. A private Supabase Storage bucket holds one deterministic object per booking. Access uses the signed-in user token and Storage RLS; the app proxies image reads without public or signed URLs. Only the submitting customer can upload while the request is new; that customer and the authorized owner can view the photo. Practice photos are scoped to their anonymous session.
+
+Photo upload follows the saved request. A failed upload leaves the booking saved and shows a retry button on the receipt, preventing duplicate bookings. The delete endpoint removes the Storage object before deleting the request; if Storage fails, the request is retained. Cleanup after a concurrent upload/booking deletion is best effort; the uploader can delete their own orphan through Storage, and administrators should periodically inspect orphan objects for retention.
+
 ## Local development
 
 Node.js 22.13+ and npm:
@@ -62,7 +68,7 @@ The legacy D1 preview needs its versioned Drizzle migrations applied locally and
 ## Validation
 
 ```sh
-node --test tests/scheduling.test.mjs tests/supabase-db.test.mjs tests/booking-email.test.mjs tests/booking-email-db.test.mjs
+node --test tests/scheduling.test.mjs tests/supabase-db.test.mjs tests/booking-email.test.mjs tests/booking-email-db.test.mjs tests/dog-photo-db.test.mjs
 npx tsc --noEmit
 python3 tests/api_smoke.py
 npm run build

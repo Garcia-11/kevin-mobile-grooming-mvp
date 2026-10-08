@@ -3,7 +3,7 @@
 Current target: `Kevin Mobile Grooming` in `JG Consulting`, free plan, `us-east-1`.
 Project ref: `myfyvezvytoreptyjyku`. The migration is schema-only; no credentials or customer records are in source.
 
-Apply migrations in order: `20261007192320_grooming_accounts_and_schedule.sql`, `20261007193157_grooming_status_conflict_response.sql`, then `20261007205240_booking_emails.sql`. All are already applied to the assessment project; do not reapply them there. The second migration returns a business-conflict error without triggering database transaction retries. Local PostgreSQL tests run the identical SQL against a fresh PGlite database.
+Apply migrations in order: `20261007192320_grooming_accounts_and_schedule.sql`, `20261007193157_grooming_status_conflict_response.sql`, `20261007205240_booking_emails.sql`, then `20261008001355_dog_photos.sql`. All are already applied to the assessment project; do not reapply them there. The second migration returns a business-conflict error without triggering database transaction retries. Local PostgreSQL tests run the identical SQL against a fresh PGlite database.
 
 ## Authentication
 
@@ -53,3 +53,7 @@ python3 tests/api_smoke.py
 ```
 
 The database tests execute PostgreSQL, not a mocked policy evaluator. The API smoke tests use only fictional practice data on the configured local preview. Account/email integration also needs a configured Supabase project and a working mail sender; passing local database tests alone does not verify email delivery.
+
+## Private dog photos
+
+Before applying the fourth migration on a new project, create the `grooming-dog-photos` bucket through the Storage API/dashboard: private, 1 MB maximum, JPEG only. These settings are already verified on the assessment project. Never delete Storage metadata through SQL; object cleanup must use the Storage API. The fourth migration adds photo availability and four scoped Storage RLS policies. The attaching function requires the exact authenticated booking owner, a new request and an existing deterministic object. Authenticated callers are intentional; fixed search paths and caller/namespace checks guard each privileged function. The advisor flags the callable function and isolated anonymous demo policies; the embedded PostgreSQL tests verify that other customers and demo users cannot access real photos.

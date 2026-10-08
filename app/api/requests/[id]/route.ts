@@ -4,6 +4,7 @@ import { json,sameOrigin } from '@/lib/data';
 import { updateSchema,today } from '@/lib/validation';
 import { visitInterval } from '@/lib/scheduling';
 import { z } from 'zod';
+import {removeDogPhoto} from '@/lib/photo-storage';
 import {notifyBooking} from '@/lib/booking-notifications';
 type Context={params:Promise<{id:string}>};
 export async function DELETE(req:Request,context:Context){
@@ -17,6 +18,9 @@ export async function DELETE(req:Request,context:Context){
   let body;try{body=await req.json()}catch{return reply({error:'Confirm deletion before removing this request.'},400,auth)}
   if(!body||typeof body!=='object'||!('confirm' in body)||body.confirm!==true)return reply({error:'Confirm deletion before removing this request.'},400,auth);
   const {id}=await context.params;if(!z.string().uuid().safeParse(id).success)return reply({error:'Request not found.'},404,auth);
+  const row=(await sb<{client_id:string|null;dog_photo:boolean}[]>('/rest/v1/grooming_requests?select=client_id,dog_photo&id=eq.'+id,auth.token))[0];
+  if(!row)return reply({error:'Request not found.'},404,auth);
+  if(row.client_id)await removeDogPhoto(auth,row.client_id,id);
   return reply(await sb('/rest/v1/rpc/grooming_delete_request',auth.token,{method:'POST',body:JSON.stringify({p_id:id,p_confirm:true})}),200,auth);
  }catch(e){return sbFailure(e,auth)}
 }

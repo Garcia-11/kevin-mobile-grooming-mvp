@@ -10,6 +10,7 @@ export async function notifyBooking(auth:Session,id:string):Promise<Notification
   const claim=await sb<EmailJob&{status:string;claimToken:string}>('/rest/v1/rpc/grooming_claim_email',auth.token,{method:'POST',body:JSON.stringify({p_request_id:id})});
   if(claim.status!=='claimed')return {status:claim.status};
   const result=await sendBookingEmail(claim,config);
-  return await sb<NotificationResult>('/rest/v1/rpc/grooming_finish_email',auth.token,{method:'POST',body:JSON.stringify({p_event_id:claim.eventId,p_claim_token:claim.claimToken,p_outcome:result.status,p_message_id:result.messageId||null,p_error:result.error||null})});
+  const saved=await sb<NotificationResult>('/rest/v1/rpc/grooming_finish_email',auth.token,{method:'POST',body:JSON.stringify({p_event_id:claim.eventId,p_claim_token:claim.claimToken,p_outcome:result.status,p_message_id:result.messageId||null,p_error:result.error||null})});
+  return saved;
  }catch(e){console.error('Booking email could not be completed',e instanceof Error?e.name:'unknown');return {status:'pending'};}
 }
