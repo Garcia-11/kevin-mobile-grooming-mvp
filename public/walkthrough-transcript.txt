@@ -1,23 +1,38 @@
-One place for every request
-Kevin runs a mobile dog grooming business. His clients currently text to book, and requests get lost. This working MVP replaces that scattered process with a clear appointment request form and a persistent workspace for Kevin.
+Kevin’s Mobile Grooming — Product Walkthrough
+English AI narration generated in Runway. Animated real application captures and fictional practice bookings.
 
-A simple client request
-A client starts here. They enter their dog’s name, breed and size, choose a service, and suggest a date and time window. The page works on a phone, so clients can request a visit wherever they are.
+Kevin runs a mobile dog grooming business. This MVP brings his booking requests into one clear workflow.
 
-The details Kevin needs
-The form also collects a contact number, the service address, and optional care notes. In this example, Taylor is requesting a full groom for Teddy. Required fields and dates are checked before anything is saved.
+His problem is simple: requests get lost in text messages. The app gives him one place to review and manage them.
 
-A clear receipt
-After submission, the client receives a reference and a clear next step. This is a request, not an automatic booking. Kevin will contact the client to agree on availability, the price, and the exact time.
+Customers sign in to their own account, then request a visit with their dog’s details, the service and a preferred date.
 
-New requests are visible
-Back in Kevin’s workspace, Teddy’s request appears automatically. The waiting count and unread badge update. The open workspace checks for new requests every eight seconds and shows an in-page alert. Browser alerts are optional when permission is granted.
+They can also add an optional dog photo and preview it before sending. The saved image is private to the customer and administrator.
 
-Review before confirming
-Opening the request shows the dog, service, preferred visit, address, contact links, and care notes in one place. Kevin can search and filter the inbox instead of searching through separate text conversations.
+A preferred date is a request, not a guaranteed appointment. Kevin still agrees on the exact time and price with the customer.
 
-Confirm then complete
-After agreeing the visit with the client, Kevin records the confirmed time. The request moves out of the waiting list. When the grooming is finished, he marks the visit completed, keeping a useful history of the work.
+Contact information, the service address and care notes are collected together. For this walkthrough, all the booking details are fictional.
 
-Ready for a mobile business
-Bookings are stored in a database and survive reloads. Real client details are protected behind owner access. Reviewers can use a separate practice workspace with fictional data. This MVP keeps Kevin in control: no automatic payments or messages, and notifications require an open workspace.
+The customer gets a receipt and a reference number. The screen clearly explains that the appointment is not confirmed yet.
+
+Kevin receives the new request in his workspace. The unread indicator and request list make it easier to see who needs a reply.
+
+Opening a request brings together the dog, service, customer details and care notes. Kevin can contact the customer before agreeing on the visit.
+
+To confirm, Kevin enters the start time, appointment duration and travel time. Here, a visit starts at ten, lasts one hour and reserves twenty minutes for travel.
+
+That reserves the schedule from ten until eleven twenty. The database blocks any confirmed appointment that overlaps the visit or its travel buffer.
+
+An attempt to confirm another visit at ten thirty is rejected. The request stays pending, so Kevin can choose a free time.
+
+At eleven twenty, the next visit can be confirmed. The previous appointment and its travel buffer have finished, so there is no overlap.
+
+For real bookings, Brevo sends confirmation and cancellation emails to the customer’s verified account. This isolated practice workspace sends no email.
+
+If a confirmed visit is cancelled, its time is released. The request remains in the system, and a real customer receives a cancellation email.
+
+Permanent deletion is a separate action with an explicit warning. Here I keep the request; I do not delete it.
+
+Sites and Cloudflare host the application. Supabase manages accounts and data, Brevo sends booking emails, and the source code is available on GitHub.
+
+This MVP assumes one groomer. Route calculation and closed-browser push alerts are future improvements. I used AI to help build and test the solution.

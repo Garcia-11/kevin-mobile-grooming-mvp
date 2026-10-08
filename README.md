@@ -17,9 +17,9 @@ A request is **not a confirmed booking**. Kevin contacts the customer to agree a
 - [Live MVP](https://kevins-grooming-bookings-joao.garcia-26.chatgpt.site)
 - [Practice workspace](https://kevins-grooming-bookings-joao.garcia-26.chatgpt.site/demo)
 - [One-page PDF](https://kevins-grooming-bookings-joao.garcia-26.chatgpt.site/mvp-overview.pdf)
-- [Original product walkthrough](https://kevins-grooming-bookings-joao.garcia-26.chatgpt.site/walkthrough.mp4)
+- [Product walkthrough](https://kevins-grooming-bookings-joao.garcia-26.chatgpt.site/walkthrough.mp4?v=20261008)
 
-The original approximately two-minute walkthrough uses captured screens and fictional data. It predates customer accounts and duration/travel reservations. Re-record the final walkthrough with the updated product before final submission; the assessment asks for a product walkthrough and does not require an on-camera presenter. No submission email is sent by the application.
+The 2-minute-47-second walkthrough uses animated real application captures, fictional practice bookings, English AI narration generated in Runway, and English subtitles. It covers customer accounts, the optional photo preview, owner review, service and travel reservations, conflict prevention, cancellation, deletion confirmation, and architecture. Email cards and the schedule timeline are explanatory diagrams. The practice session sends no email; no request is deleted in the demonstration. The photo preview is shown separately in the real form without submission. This is an edited walkthrough, not a continuous screen recording. The assessment does not require an on-camera presenter. No submission email is sent by the application.
 
 ## Architecture
 
